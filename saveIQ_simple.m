@@ -13,7 +13,7 @@ function saveIQData_simple(data, filename, pixelMap, UserSet)
 %     data = data(:,:,:,part);
 
 %     data = serialize(data);
-    data = hlp_serialize(data);
+    data = getByteStreamFromArray(data);
 %     if splitPart ~= 1
 %         for i = 2 : splitPart
 %             eval(['data',num2str(i),'=hlp_serialize(data',num2str(i),');']);

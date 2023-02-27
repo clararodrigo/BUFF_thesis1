@@ -1,9 +1,8 @@
 function [img_out] = apply_cuDAS_better(rf_data, transducer, angles, focus, pixelMap)
 
-    addpath(genpath("D:\Share to student\Verasonics_GPU_Beamformer_CheeHau\src\gpuDAS"));
-
-    nframes = size(rf_data, 3);
-    ntrans = size(rf_data, 4);
+    %  rf_data has structure [vol, frames, angles]
+    nframes = size(rf_data, 4);
+    ntrans = size(rf_data, 5);
     
     % Delay due to transducer impulse response
     delay = ones(ntrans,1)*length(transducer.tx_aperture.impulse_response.signal)/transducer.fs;
@@ -53,12 +52,14 @@ function [img_out] = apply_cuDAS_better(rf_data, transducer, angles, focus, pixe
     
     for f = 1 : nframes
         disp(['Processing Plane Wave Frame #',num2str(f)]);
-        for a = 1 : ntrans
-            disp(['Angle ',num2str(a)]);
-            % Run Beamforming
-            temp_out = cuDAS_single(0, squeeze(rf_data(:, :, f, a)));
-            img_out(:, :, :, f, a) = temp_out;
-        end
+%         for a = 1 : ntrans
+%             disp(['Angle ',num2str(a)]);
+%             % Run Beamforming
+%             temp_out = cuDAS_single(0, squeeze(rf_data(:, :, f, a)));
+%             img_out(:, :, :, f, a) = temp_out;
+%         end
+        temp_out = cuDAS_single(0, squeeze(rf_data(:, :, f, :)));
+        img_out(:, :, :, f, :) = temp_out;
     end
     % de-initialize GPU
     cuDAS_single(-1);

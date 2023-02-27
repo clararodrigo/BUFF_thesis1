@@ -4,9 +4,9 @@ close all;
 clc;
 
 %% Import Libraries
-addpath(genpath('/home/clararg/Documents/Scripts/Share to student/Verasonics_GPU_Beamformer_CheeHau/src/gpuDAS'));
+addpath(genpath('../../Share to student/Verasonics_GPU_Beamformer_CheeHau/src/gpuDAS'));
+addpath(genpath('../../Share to student/01 Save Fast'));
 %BUFF
-addpath(genpath('/home/clararg/Documents/Scripts/Share to student/01 Save Fast'));
 addpath(genpath('../buff/src'));
 %FieldII
 addpath(genpath("../field_ii"));
@@ -56,9 +56,6 @@ focus_cart = [XF(:), YF(:), ZF(:)];
 
 % Spherical
 focus_r = vecnorm(focus_cart,2,2);
-% focus_a2 = asin(YF(:)./focus_r);
-% focus_a1 = asin(XF(:)./focus_r./cos(focus_a2));
-% angles = [focus_a1(:), focus_a2(:)];
 focus = -focus_r;
 
 %% Create tubes
@@ -170,18 +167,14 @@ save(['../RF/rf_', filename,'dt001'], 'rf_data', '-v7.3');
 save(['../RF/rf_', filename,'bubbles_dt001'], 'tot_bub','-v7.3');
 
 %% beamforming
-for i = 1:20:UserSet.totalFrame-19
-    
-    [ImgData, pixelMap] = beamform_sim_ple(rf_data(:,:,i:i+19), transducer,...
-                        focus_cart, focus_r);
-    ImgData = sum(ImgData,5);
-    ImgData = permute(ImgData, [3,2,1,4]);
 
+for i = 1:40:UserSet.totalFrame-39
+    [tmp, pixelMap] = beamform_sim_ple(squeeze(rf_data(:,:,i:i+19,:)), transducer, angles, focus);     % beamform
+    ImgData = permute(tmp, [3,2,1,4]);                                                                 % should just be 1 volume
 
+    saveIQ_simple(ImgData, ['../BF/CROSS/bf_', filename,'_', num2str(i),'_',num2str(i+39)], pixelMap, UserSet)
 end
-%%
-% save data
-saveIQ_simple(ImgData, ['PSF/bf_', filename], pixelMap, UserSet)
+
 %%
 img = sum(ImgData,5);
 img = permute(img, [3,2,1]);
@@ -196,18 +189,3 @@ subplot(131); imagesc(pixelMap.pixelMapY, pixelMap.pixelMapZ, p_x');
 subplot(132); imagesc(pixelMap.pixelMapX, pixelMap.pixelMapZ, p_y');
 subplot(133); imagesc(pixelMap.pixelMapX, pixelMap.pixelMapY, p_z);
 
-%%
-t = permute(img_out, [3,2,1,4,5]);
-img = abs(t(:,:,:,1,1));
-p_x = squeeze(sum(img,1));
-p_y = squeeze(sum(img,2));
-p_z = squeeze(sum(img,3));
-
-figure;
-subplot(131); imagesc(pixelMap.pixelMapY, pixelMap.pixelMapZ, p_x');
-subplot(132); imagesc(pixelMap.pixelMapX, pixelMap.pixelMapZ, p_y');
-subplot(133); imagesc(pixelMap.pixelMapX, pixelMap.pixelMapY, p_z);
-
-%%
-img = abs(img)./max(abs(img),[],'all');
-mid = sum(img(:,:,1),2);

@@ -5,14 +5,14 @@ clc;
 
 %% Import Libraries
 addpath(genpath('/home/clararg/Documents/Scripts/Share to student/Verasonics_GPU_Beamformer_CheeHau/src/gpuDAS'));
-%BUFF
 addpath(genpath('/home/clararg/Documents/Scripts/Share to student/01 Save Fast'));
+%BUFF
 addpath(genpath('../buff/src'));
 %FieldII
 addpath(genpath("../field_ii"));
 %save directories
-addpath(genpath('RF'));
-addpath(genpath('BF'));
+addpath(genpath('../RF'));
+addpath(genpath('../BF'));
 
 field_init(0);
 set_sampling(GlobalConfig().fs);
@@ -154,7 +154,7 @@ for i = 1:40:161
     [tmp, pixelMap] = beamform_sim_ple(rf_data(:,:,i:i+39), transducer, [0,0], -32*lambda);
     tmp = sum(tmp,5);
     tmp = permute(tmp, [3,2,1,4]);
-    saveIQ_simple(tmp, ['../BF/bf_', filename,'_', num2str(i),'_',num2str(i+39)], pixelMap, UserSet)
+    saveIQ_simple(tmp, ['../BF/SDW/bf_', filename,'_', num2str(i),'_',num2str(i+39)], pixelMap, UserSet)
 end
 %%
 
