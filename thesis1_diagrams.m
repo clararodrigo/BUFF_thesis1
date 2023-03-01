@@ -44,21 +44,90 @@ end
 transducer.tx_aperture.apply_delays();
 %% PLOT VIRTUAL SOURCES
 
-figure;
+figure('Renderer', 'painters', 'Position', [1000 1000 400 400])
+set(gcf, 'color','w')
+% subplot(1,3,1)
 ha = axes(); xlabel('X'); ylabel('Y'); zlabel('Z'); hold(ha, 'on');
-xlim(ha, [-30e-3, 30e-3]);
-ylim(ha, [-30e-3, 30e-3]);
-zlim(ha, [-10e-3, 30e-3]);
+xlim(ha, [-10e-3, 10e-3]);
+ylim(ha, [-10e-3, 10e-3]);
+zlim(ha, [-10e-3, 10e-3]);
+grid on;
+view(ha,0,70)
+set(gca, 'ZDir','reverse')
+transducer.tx_aperture.plot_aperture(ha);
+% space.plot_skeleton(ha);
+% [X,Y,Z] = sphere(10);
+% x = [0.5*X(:); 0.75*X(:); X(:)]*0.005;
+% y = [0.5*Y(:); 0.75*Y(:); Y(:)]*0.005;
+% z = [0.5*Z(:); 0.75*Z(:); Z(:)]*0.005;
+% S = repmat([0.1,1,5],numel(X),1);
+% s = S(:);
+% s = [ones(313,1)*0.001; ones(50,1)*5];
+% scatter3(ha, x,y,z-32*lambda, s);
+plot3([0,0],[0,0,],[-32*lambda, 0.01],'b--')
+
+scatter3(ha, 0,0,-32*lambda,15,'black','filled')
+scatter3(ha, 0,0,0.01,10,'black')
+view(40,18)
+title('SDW')
+% fig2plotly(gcf,'offline')
+
+% angles for CROSS
+lambda = transducer.c/(transducer.f0);
+x_focus = (-50:25:50)*(32/150);
+y_focus = (-50:25:50)*(32/150);
+z_focus = 32:32;
+XF = [x_focus  , x_focus *0 ] * lambda;
+YF = [y_focus *0  , y_focus ] * lambda;
+ZF = ones(size(XF)) *32 * lambda;
+focus_cart = [XF(:), YF(:), ZF(:)];
+focus = -vecnorm(focus_cart,2,2);
+
+figure('Renderer', 'painters', 'Position', [1410 1000 400 400])
+set(gcf, 'color','w')
+% subplot(1,3,2)
+ha = axes(); xlabel('X(m)'); ylabel('Y'); zlabel('Z'); hold(ha, 'on');
+xlim(ha, [-10e-3, 10e-3]);
+ylim(ha, [-10e-3, 10e-3]);
+zlim(ha, [-10e-3, 10e-3]);
 grid on;
 set(gca, 'ZDir','reverse')
 transducer.tx_aperture.plot_aperture(ha);
 % space.plot_skeleton(ha);
-scatter3(ha, 0,0,-32*lambda,30,'black','filled')
-scatter3(ha, 0,0,10*32*lambda,30,'black','filled')
+for i = 1:10
+    scatter3(ha,focus_cart(i,1),focus_cart(i,2),-32*lambda,15,'black','filled')
+    scatter3(ha,focus_cart(i,1),focus_cart(i,2),0.01,15,'black')
+end
+x = [focus_cart(1,1),focus_cart(5,1)];
+y = [focus_cart(1,2),focus_cart(5,2)];
+z = [-32*lambda, 0.01];
+plot3(x,y,z,'b--')
+view(40,18)
+title('CROSS')
 
-delays_x = repmat([-0.05:32:0.05],32,1);
-plot3(delays_x,delays_x,reshape(delays,[32,32])*1000000)
-
+% spiral
+x_focus = [-50, -25, 50, 25, -30, -20, 15, 12, -10, -5]*(32/150)*lambda;
+y_focus = [0,   -50, -25, 50, 25, -15, -17, 10, 10, 0]*(32/150)*lambda;
+focus_cart = [x_focus(:), y_focus(:)];
+figure('Renderer', 'painters', 'Position', [2000 1000 400 400])
+set(gcf, 'color','w')
+% subplot(1,3,3)
+ha = axes(); xlabel('X'); ylabel('Y'); zlabel('Z'); hold(ha, 'on');
+xlim(ha, [-10e-3, 10e-3]);
+ylim(ha, [-10e-3, 10e-3]);
+zlim(ha, [-10e-3, 10e-3]);
+grid on;
+set(gca, 'ZDir','reverse')
+transducer.tx_aperture.plot_aperture(ha);
+space.plot_skeleton(ha);
+for i = 1:10
+    scatter3(ha,focus_cart(i,1),focus_cart(i,2),-32*lambda,10,'black','filled')
+    scatter3(ha,-focus_cart(i,1),-focus_cart(i,2),0.01,10,'black')
+end
+plot3([focus_cart(1,1), -focus_cart(1,1)],...
+    [focus_cart(1,2), -focus_cart(1,2)], [-32*lambda, 0.01],'b--')
+view(40,18)
+title('SPIRAL')
 
 %%
 tube1 = PhantomTube(...
@@ -77,7 +146,8 @@ fps = 500;
 dt = 1/fps;
 dt = 0.01;
 figure;
-ha = axes(); xlabel('X'); ylabel('Y'); zlabel('Z'); hold(ha, 'on');
+ha = axes(); xlabel(ha, 'X (m)'); ylabel('Y (m)'); zlabel('Z (m)'); hold(ha, 'on');
+set(gcf, 'color','w')
 tube1.plot_skeleton(ha);
 tube2.plot_skeleton(ha);
 
@@ -99,50 +169,142 @@ tube2.bub_scat.pos(6:end,:) = [];
 bub1_p = tube1.plot_bub_scat(ha);
 bub2_p = tube2.plot_bub_scat(ha);
 
-% pre-run
-for fn = 1:UserSet.totalFrame
-    tube1.update(dt);
-    tube2.update(dt);
-end
-
-
-% Simulate
-for f = 1:UserSet.totalFrame
-    
-%     waitbar(f/UserSet.totalFrame, ['Frame ',num2str(f),'/',num2str(UserSet.totalFrame)]);
-    tube1.update(dt);
-    tube2.update(dt);
-
-    tube1.update_bub_scat(bub1_p);
-    tube2.update_bub_scat(bub2_p);
-
-    tot_bub(:,f) = tube1.bub_scat + tube2.bub_scat;
-        
-    fprintf('\n');
-end
 
 %% Plot SRA
 sra = load('saved100CompRndApod.mat');
-sra = sra.CompRndApod(1,:,:);
-sra1 = reshape(sra(1,1,:),[32,32]);
-% sra2 = reshape(sra(1,2,:),[32,32]);
-% sra3 = reshape(sra(1,3,:),[32,32]);
-% sra4 = reshape(sra(1,4,:),[32,32]);
+sra = squeeze(sra.CompRndApod(1,:,:));
+sra1 = reshape(sra(1,:),[32,32]);
+sra2 = reshape(sra(2,:),[32,32]);
+sra3 = reshape(sra(3,:),[32,32]);
+sra4 = reshape(sra(4,:),[32,32]);
 
-transducer.set_receive_apodization(1,1);
+x = repmat(1:32,32,1);
+y = x';
 
-data = xdc_get(1, 'rect');
-x = data([11, 20, 17, 14], :);
-y = data([12, 21, 18, 15], :);
-z = data([13, 22, 19, 16], :);
-c = data([5, 5, 5, 5], :);
+x = repmat(1:35,32,1);
+y = repmat(1:32,35,1)';
 
-figure;
-ha = axes(); xlabel('X'); ylabel('Y'); zlabel('Z'); hold(ha, 'on');
-patch(ha, x, y, z, c);
-view(ha, 3)
-xlabel(ha, 'X');
-ylabel(ha, 'Y');
-zlabel(ha, 'Z');
+fig = figure('Renderer', 'painters', 'Position', [2000 1000 2808 468]);
+set(gcf, 'color','w')
+subplot(151);
+c = [];
+for i = 1:32
+    for j = 1:32
+        if(sra1(i,j) == 1)
+            c = [c; [0,0.7,0.9]];
+        else
+            c = [c; [1,1,1]];
+        end
+    end
+end
+c = [c(1:256,:);repmat([1,1,1],32,1);...
+        c(257:512,:);repmat([1,1,1],32,1);...
+        c(513:768,:);repmat([1,1,1],32,1);...
+        c(769:1024,:)];
+
+scatter(y(:),x(:),10,c,'filled'); set(gca,'fontsize', 10); 
+th = title('1st aperture','FontWeight','normal');
+pos = get(th, 'position');
+pos1 = pos+ [0 01 0];
+set(th,'position', pos1);
+xticklabels([-4.8,4.8])
+% ax=gca;
+% ax.XColor = [0.4,0.4,0.4];
+% ax.YColor = ax.XColor;
+subplot(152)
+c=[];
+for i = 1:32
+    for j = 1:32
+        if(sra2(i,j) == 1)
+            c = [c; [1,0.75,0]];
+        else
+            c = [c; [1,1,1]];
+        end
+    end
+end
+c = [c(1:256,:);repmat([1,1,1],32,1);...
+        c(257:512,:);repmat([1,1,1],32,1);...
+        c(513:768,:);repmat([1,1,1],32,1);...
+        c(769:1024,:)];
+scatter(y(:),x(:),10,c,'filled'); set(gca,'fontsize', 10)
+th = title('2nd aperture','FontWeight','normal');
+pos1 = pos+ [0 01 0];
+set(th,'position', pos1);
+
+subplot(153)
+c=[];
+for i = 1:32
+    for j = 1:32
+        if(sra3(i,j) == 1)
+            c = [c; [1,0.2,0.6]];
+        else
+            c = [c; [1,1,1]];
+        end
+    end
+end
+c = [c(1:256,:);repmat([1,1,1],32,1);...
+        c(257:512,:);repmat([1,1,1],32,1);...
+        c(513:768,:);repmat([1,1,1],32,1);...
+        c(769:1024,:)];
+scatter(y(:),x(:),10,c,'filled');set(gca,'fontsize', 10)
+th = title('3rd aperture','FontWeight','normal');
+pos1 = pos+ [0 01 0];
+set(th,'position', pos1);
+
+
+subplot(154)
+c=[];
+for i = 1:32
+    for j = 1:32
+        if(sra4(i,j) == 1)
+            c = [c; [0.2,1,0.2]];
+        else
+            c = [c; [1,1,1]];
+        end
+    end
+end
+c = [c(1:256,:);repmat([1,1,1],32,1);...
+        c(257:512,:);repmat([1,1,1],32,1);...
+        c(513:768,:);repmat([1,1,1],32,1);...
+        c(769:1024,:)];
+scatter(y(:),x(:),10,c,'filled');set(gca,'fontsize', 10)
+th = title('4th aperture','FontWeight','normal');
+pos1 = pos+ [0 01 0];
+set(th,'position', pos1);
+
+
+subplot(155)
+c=[];
+for i = 1:32
+    for j = 1:32
+        if(sra1(i,j) == 1)
+            c = [c; [0,0.7,0.9]];
+        elseif(sra2(i,j) == 1)
+            c = [c; [1,0.75,0]];
+        elseif(sra3(i,j) == 1)
+            c = [c; [1,0.2,0.6]];
+        elseif(sra4(i,j) == 1)
+            c = [c; [0.2,1,0.2]];
+        else
+            c = [c; [1,1,1]];
+        end
+    end
+end
+c = [c(1:256,:);repmat([1,1,1],32,1);...
+        c(257:512,:);repmat([1,1,1],32,1);...
+        c(513:768,:);repmat([1,1,1],32,1);...
+        c(769:1024,:)];
+scatter(y(:),x(:),10,c,'filled');set(gca,'fontsize', 10)
+th = title('All appertures','FontWeight','normal');
+pos1 = pos+ [0 01 0];
+set(th,'position', pos1);
+
+han = axes(fig, 'visible','off');
+han.Title.Visible='on';
+han.XLabel.Visible='on';
+han.YLabel.Visible='on';
+ylabel(han,'Y Elements');
+xlabel(han,'X Elements');
+
 
 

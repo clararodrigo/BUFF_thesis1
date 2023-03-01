@@ -1,8 +1,8 @@
 function [img_out] = apply_cuDAS_better(rf_data, transducer, angles, focus, pixelMap)
 
     %  rf_data has structure [vol, frames, angles]
-    nframes = size(rf_data, 4);
-    ntrans = size(rf_data, 5);
+    nframes = size(rf_data, 3);
+    ntrans = size(rf_data, 4);
     
     % Delay due to transducer impulse response
     delay = ones(ntrans,1)*length(transducer.tx_aperture.impulse_response.signal)/transducer.fs;
@@ -13,10 +13,11 @@ function [img_out] = apply_cuDAS_better(rf_data, transducer, angles, focus, pixe
     % pre-allocate memory for output
     out_sz = [...
                 length(pixelMap.pixelMapZ), ...
-                length(pixelMap.pixelMapY), ...
-                length(pixelMap.pixelMapX) ...
+                length(pixelMap.pixelMapX), ...
+                length(pixelMap.pixelMapY) ...
             ];
-    img_out = complex(zeros([out_sz, nframes, ntrans],'single'));
+%     img_out = complex(zeros([out_sz, nframes, ntrans],'single'));
+    img_out = complex(zeros([out_sz, nframes],'single'));
     
     % Convert data type to simple
     if ~isa(rf_data, 'single')
@@ -51,7 +52,7 @@ function [img_out] = apply_cuDAS_better(rf_data, transducer, angles, focus, pixe
     );
     
     for f = 1 : nframes
-        disp(['Processing Plane Wave Frame #',num2str(f)]);
+        disp(['Frame ',num2str(f)]);
 %         for a = 1 : ntrans
 %             disp(['Angle ',num2str(a)]);
 %             % Run Beamforming
@@ -59,7 +60,7 @@ function [img_out] = apply_cuDAS_better(rf_data, transducer, angles, focus, pixe
 %             img_out(:, :, :, f, a) = temp_out;
 %         end
         temp_out = cuDAS_single(0, squeeze(rf_data(:, :, f, :)));
-        img_out(:, :, :, f, :) = temp_out;
+        img_out(:, :, :, f) = temp_out;
     end
     % de-initialize GPU
     cuDAS_single(-1);

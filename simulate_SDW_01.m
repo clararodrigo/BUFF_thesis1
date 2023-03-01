@@ -18,24 +18,24 @@ field_init(0);
 set_sampling(GlobalConfig().fs);
 
 UserSet.totalFrame = 1;
-UserSet.ap = 4;
+UserSet.ap = 2;
 UserSet.full = 0;                                                           % if 1: not using sparse apertures
-medium = 0;                                                                 % 0 : three single bubbles; 
+medium = 1;                                                                 % 0 : three single bubbles; 
                                                                             % 1: field ii contrast phantom
 
 if(UserSet.full)
     UserSet.ap = 1;
     filename = [num2str(medium), '_SDW_', num2str(UserSet.totalFrame), ...  % used for saving
-                'F', '5A_3cm'];
+                'F', '5A'];
 else
     filename = [num2str(medium), '_SDW_', num2str(UserSet.totalFrame), ...  % used for saving
-            'F', num2str(UserSet.ap), 'A_3cm'];
+            'F', num2str(UserSet.ap), 'A'];
 end
 
 %% Setup
 % Main volume
 space = Box( ...
-        [0, 0, 30*mm], ...              % Center
+        [0, 0, 60*mm], ...              % Center
         [10*mm, 10*mm, 10*mm], ...      % Size
         [0, 0, 0] ...                   % Rotation
 );
@@ -57,13 +57,22 @@ switch medium
                         space.center; ...                       % Location of bubble 1
                         space.center+[0, 0*mm, 10*mm];...       % Location of bubble 2
                         space.center+[0, 0*mm, 20*mm]...        % Location of bubble 3
-                        ], [bub,bub,bub]);
+                        ], [bub, bub, bub]);
     case 1
-        [pos, amp] = contrast_phantom(1000);
+        [pos, amp] = contrast_phantom(10000);
         scat = LinearScatterers(pos,amp);
+
+    case 2
+        bub = SonovueBubble(3.6e-6);
+        
+        positions = [];
+        for i = 1:50
+            positions = [positions; space.center+[0, 0, i*1*mm]];
+
+        end
+
+        scat = BubbleScatterers(positions, repmat([bub],1,50));
 end
-
-
 %% Set focus and steering
 lambda = transducer.c/(transducer.f0);
 
@@ -112,7 +121,7 @@ rf_data = permute(rf_data, [2,1,3,4]);
 rf_data = sum(rf_data,4);
 
 %% to beamform in gpu
-save(['../RF/SDW/rf_', filename], 'rf_data');
+% save(['../RF/SDW/rf_', filename], 'rf_data');
 
 %% Beamform images
 % load('RF/SDW/rf_0_SDW_1F5A_3cm.mat')
@@ -123,7 +132,8 @@ save(['../RF/SDW/rf_', filename], 'rf_data');
 lambda = transducer.c/(transducer.f0);
 angles = [0,0];
 focus = -32*lambda;
-[ImgData, pixelMap] = beamform_sim_ple(rf_data, transducer, angles, focus);
+coords = [[-25*mm, -5*mm, 50*mm];[25* mm, 5*mm, 70*mm]];
+[ImgData, pixelMap] = beamform_with_px(rf_data, coords, transducer, angles, focus);
 
 % beamform yields ImgData in ZYX format, transform to XYZ
 ImgData = permute(ImgData, [3,2,1]);
@@ -141,6 +151,8 @@ subplot(132); imagesc(pixelMap.pixelMapX, pixelMap.pixelMapZ, p_y');
 subplot(133); imagesc(pixelMap.pixelMapX, pixelMap.pixelMapY, p_z);
 
 %%
-saveIQ_simple(ImgData,['../BF/SDW/bf_', filename],pixelMap,UserSet);
-
-
+% saveIQ_simple(ImgData,['../BF/SDW/bf_', filename],pixelMap,UserSet); 
+figure;
+for i = 1:10:200 
+    imagesc(pixelMap.pixelMapX, pixelMap.pixelMapZ, squeeze(abs(ImgData(i,:,:)))); pause;
+end

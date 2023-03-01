@@ -1,9 +1,9 @@
 % Bingxue for data serialization and saving
 function saveIQData_simple(data, filename, pixelMap, UserSet)
-
-    S = whos('data');
-    splitPart = ceil(S.bytes/2^32);
-
+% 
+%     S = whos('data');
+%     splitPart = ceil(S.bytes/2^32);
+% 
 %     n = ndims(data);
 %     for i = 2 : splitPart
 %         part = ceil((i-1)*size(data,n)/splitPart+1):ceil(i*size(data,n)/splitPart);

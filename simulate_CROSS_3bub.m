@@ -140,11 +140,11 @@ rf_data = sum(rf_data,5);
 %% to beamform in gpu
 save(['../RF/CROSS/rf_', filename], 'rf_data');
 
-% %%
-% load('RF/CROSS/rf_0_CROSS_1F5A.mat')
-% filename = '0_CROSS_1F5A';
-% UserSet.ap=1;
-% UserSet.full=1;
+%%
+load('../RF/CROSS/rf_0_CROSS_1F5A.mat')
+filename = '0_CROSS_1F5A';
+UserSet.ap=1;
+UserSet.full=1;
 % 
 rf_data = squeeze(rf_data);                                                     % to match needed shape
 [tmp, pixelMap] = beamform_sim_ple(rf_data, transducer, focus_cart, focus);     % beamform
